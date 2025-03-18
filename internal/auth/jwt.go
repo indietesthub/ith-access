@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GetJWTSecretKey() string {
+var GetJWTSecretKey = func() []byte {
 	secretName := "prod/indietesthub/jwt-secret-key"
 	region := "us-east-1"
 
@@ -32,9 +33,7 @@ func GetJWTSecretKey() string {
 		log.Fatalf("Failed to get secret: %v", err)
 	}
 
-	var secretValue string = *result.SecretString
-
-	return secretValue
+	return []byte(*result.SecretString)
 }
 
 type Claims struct {
@@ -60,8 +59,11 @@ func ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return GetJWTSecretKey(), nil
 	})
+	if err != nil {
+		return nil, err
+	}
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		return claims, nil
 	}
-	return nil, err
+	return nil, fmt.Errorf("invalid token")
 }
