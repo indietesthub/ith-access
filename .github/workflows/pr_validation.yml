@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   lint:
-    name: golangci-lint
+    name: Go - Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +19,7 @@ jobs:
           go-version: stable
       - uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.66
+          version: v1.64
 
   unit-tests:
     name: Go - Unit Tests
