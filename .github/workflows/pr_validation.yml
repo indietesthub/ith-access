@@ -21,7 +21,7 @@ jobs:
         with:
           version: v1.66
 
-  build:
+  unit-tests:
     name: Go - Unit Tests
     runs-on: ubuntu-latest
     needs: lint
