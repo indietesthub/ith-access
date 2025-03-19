@@ -45,10 +45,6 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	logger.Info("User found, verifying password")
-	logger.Info("Stored hash:", user.Password)
-	logger.Info("Provided password:", request.Password)
-
 	// Verify password using bcrypt
 	if !auth.CheckPassword(request.Password, user.Password) {
 		logger.Error("Invalid password")
