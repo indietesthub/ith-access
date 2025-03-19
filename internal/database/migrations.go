@@ -47,7 +47,9 @@ func RunMigrations() error {
 		_, err = tx.Exec(string(content))
 		if err != nil {
 			// Rollback the transaction on error
-			tx.Rollback()
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				return fmt.Errorf("error rolling back transaction for migration %s: %v (original error: %v)", file, rollbackErr, err)
+			}
 			return fmt.Errorf("error executing migration %s: %v", file, err)
 		}
 
