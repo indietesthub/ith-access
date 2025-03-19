@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/indietesthub/ith-access/internal/auth"
 	"github.com/indietesthub/ith-access/internal/repository"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,6 +22,11 @@ func setupRouter() *gin.Engine {
 
 	// Create login handler with mock repository
 	loginHandler := NewLoginHandler(mockRepo)
+
+	// Set a fixed JWT secret key for testing
+	auth.JWTSecretKey = func() []byte {
+		return []byte("test-secret-key")
+	}
 
 	r.POST("/login", loginHandler.Handle)
 	return r

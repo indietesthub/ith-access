@@ -25,22 +25,37 @@ func MockGetJWTSecretKey(mockedSecret string) func() []byte {
 }
 
 func TestGenerateToken(t *testing.T) {
-	originalGetJWTSecretKey := GetJWTSecretKey
-	defer func() { GetJWTSecretKey = originalGetJWTSecretKey }()
+	// Save original JWTSecretKey
+	originalJWTSecretKey := JWTSecretKey
 
-	mockedSecret := "mocked-secret"
-	GetJWTSecretKey = MockGetJWTSecretKey(mockedSecret)
+	// Set test secret key
+	JWTSecretKey = func() []byte {
+		return []byte("test-secret-key")
+	}
+
+	// Restore original JWTSecretKey after test
+	defer func() {
+		JWTSecretKey = originalJWTSecretKey
+	}()
 
 	token, err := GenerateToken("user123")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, token)
 }
-func TestValidateToken(t *testing.T) {
-	originalGetJWTSecretKey := GetJWTSecretKey
-	defer func() { GetJWTSecretKey = originalGetJWTSecretKey }()
 
-	mockedSecret := "mocked-secret"
-	GetJWTSecretKey = MockGetJWTSecretKey(mockedSecret)
+func TestValidateToken(t *testing.T) {
+	// Save original JWTSecretKey
+	originalJWTSecretKey := JWTSecretKey
+
+	// Set test secret key
+	JWTSecretKey = func() []byte {
+		return []byte("test-secret-key")
+	}
+
+	// Restore original JWTSecretKey after test
+	defer func() {
+		JWTSecretKey = originalJWTSecretKey
+	}()
 
 	tokenString, err := GenerateToken("user123")
 	assert.NoError(t, err)
@@ -51,11 +66,18 @@ func TestValidateToken(t *testing.T) {
 }
 
 func TestValidateTokenInvalid(t *testing.T) {
-	originalGetJWTSecretKey := GetJWTSecretKey
-	defer func() { GetJWTSecretKey = originalGetJWTSecretKey }()
+	// Save original JWTSecretKey
+	originalJWTSecretKey := JWTSecretKey
 
-	mockedSecret := "mocked-secret"
-	GetJWTSecretKey = MockGetJWTSecretKey(mockedSecret)
+	// Set test secret key
+	JWTSecretKey = func() []byte {
+		return []byte("test-secret-key")
+	}
+
+	// Restore original JWTSecretKey after test
+	defer func() {
+		JWTSecretKey = originalJWTSecretKey
+	}()
 
 	_, err := ValidateToken("invalid-token")
 	assert.Error(t, err)

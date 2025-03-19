@@ -12,6 +12,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// JWTSecretKey is the secret key used for JWT signing and verification
+// It can be overridden in tests
+var JWTSecretKey = GetJWTSecretKey
+
 var GetJWTSecretKey = func() []byte {
 	secretName := "prod/indietesthub/jwt-secret-key"
 	region := "us-east-1"
@@ -52,12 +56,12 @@ func GenerateToken(userID string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(GetJWTSecretKey())
+	return token.SignedString(JWTSecretKey())
 }
 
 func ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return GetJWTSecretKey(), nil
+		return JWTSecretKey(), nil
 	})
 	if err != nil {
 		return nil, err
