@@ -9,6 +9,13 @@ import (
 )
 
 func RunMigrations() error {
+	// First, verify we're connected to the right database
+	var dbName string
+	err := DB.QueryRow("SELECT current_database()").Scan(&dbName)
+	if err != nil {
+		return fmt.Errorf("error verifying database connection: %v", err)
+	}
+
 	files, err := os.ReadDir("internal/database/migrations")
 	if err != nil {
 		return fmt.Errorf("error reading migrations directory: %v", err)
@@ -23,16 +30,31 @@ func RunMigrations() error {
 	}
 	sort.Strings(migrationFiles)
 
-	// Execute each migration
+	// Execute each migration in a transaction
 	for _, file := range migrationFiles {
 		content, err := os.ReadFile(filepath.Join("internal/database/migrations", file))
 		if err != nil {
 			return fmt.Errorf("error reading migration file %s: %v", file, err)
 		}
 
-		_, err = DB.Exec(string(content))
+		// Start a transaction
+		tx, err := DB.Begin()
 		if err != nil {
+			return fmt.Errorf("error starting transaction for migration %s: %v", file, err)
+		}
+
+		// Execute the migration
+		_, err = tx.Exec(string(content))
+		if err != nil {
+			// Rollback the transaction on error
+			tx.Rollback()
 			return fmt.Errorf("error executing migration %s: %v", file, err)
+		}
+
+		// Commit the transaction
+		err = tx.Commit()
+		if err != nil {
+			return fmt.Errorf("error committing migration %s: %v", file, err)
 		}
 	}
 

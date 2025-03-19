@@ -2,11 +2,21 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
+	"errors"
 
 	"github.com/indietesthub/ith-access/internal/database"
 	"github.com/indietesthub/ith-access/internal/model"
 )
+
+var (
+	ErrUserNotFound = errors.New("user not found")
+	ErrDatabase     = errors.New("database error")
+)
+
+type UserRepositoryInterface interface {
+	GetByEmail(email string) (*model.User, error)
+	GetByID(id int64) (*model.User, error)
+}
 
 type UserRepository struct {
 	db *sql.DB
@@ -19,57 +29,25 @@ func NewUserRepository() *UserRepository {
 }
 
 func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
-	user := &model.User{}
-
-	query := `
-		SELECT id, email, password, name, created_at, updated_at 
-		FROM users 
-		WHERE email = ?
-	`
-
-	err := r.db.QueryRow(query, email).Scan(
-		&user.ID,
-		&user.Email,
-		&user.Password,
-		&user.Name,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("user not found")
-	}
+	var user model.User
+	err := r.db.QueryRow("SELECT id, email, password, name FROM users WHERE email = $1", email).Scan(&user.ID, &user.Email, &user.Password, &user.Name)
 	if err != nil {
-		return nil, fmt.Errorf("error querying user: %v", err)
+		if err == sql.ErrNoRows {
+			return nil, ErrUserNotFound
+		}
+		return nil, ErrDatabase
 	}
-
-	return user, nil
+	return &user, nil
 }
 
 func (r *UserRepository) GetByID(id int64) (*model.User, error) {
-	user := &model.User{}
-
-	query := `
-		SELECT id, email, password, name, created_at, updated_at 
-		FROM users 
-		WHERE id = ?
-	`
-
-	err := r.db.QueryRow(query, id).Scan(
-		&user.ID,
-		&user.Email,
-		&user.Password,
-		&user.Name,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("user not found")
-	}
+	var user model.User
+	err := r.db.QueryRow("SELECT id, email, password, name FROM users WHERE id = $1", id).Scan(&user.ID, &user.Email, &user.Password, &user.Name)
 	if err != nil {
-		return nil, fmt.Errorf("error querying user: %v", err)
+		if err == sql.ErrNoRows {
+			return nil, ErrUserNotFound
+		}
+		return nil, ErrDatabase
 	}
-
-	return user, nil
+	return &user, nil
 }

@@ -8,13 +8,21 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/indietesthub/ith-access/internal/repository"
 	"github.com/stretchr/testify/assert"
 )
 
 func setupRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.POST("/login", LoginHandler)
+
+	// Create mock repository
+	mockRepo := repository.NewMockUserRepository()
+
+	// Create login handler with mock repository
+	loginHandler := NewLoginHandler(mockRepo)
+
+	r.POST("/login", loginHandler.Handle)
 	return r
 }
 

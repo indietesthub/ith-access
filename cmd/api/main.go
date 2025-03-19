@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/indietesthub/ith-access/internal/database"
 	"github.com/indietesthub/ith-access/internal/handler"
+	"github.com/indietesthub/ith-access/internal/repository"
 	"github.com/indietesthub/ith-access/pkg/logger"
 )
 
@@ -30,7 +31,9 @@ func main() {
 	router := gin.Default()
 
 	// Add routes
-	router.POST("/login", handler.LoginHandler)
+	userRepo := repository.NewUserRepository()
+	loginHandler := handler.NewLoginHandler(userRepo)
+	router.POST("/login", loginHandler.Handle)
 
 	// Start server
 	port := os.Getenv("PORT")

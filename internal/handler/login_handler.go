@@ -14,7 +14,17 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func LoginHandler(c *gin.Context) {
+type LoginHandler struct {
+	userRepo repository.UserRepositoryInterface
+}
+
+func NewLoginHandler(userRepo repository.UserRepositoryInterface) *LoginHandler {
+	return &LoginHandler{
+		userRepo: userRepo,
+	}
+}
+
+func (h *LoginHandler) Handle(c *gin.Context) {
 	var request LoginRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		logger.Error("Invalid request body", err)
@@ -23,10 +33,20 @@ func LoginHandler(c *gin.Context) {
 	}
 
 	// Get user from database
-	userRepo := repository.NewUserRepository()
-	user, err := userRepo.GetByEmail(request.Email)
+	user, err := h.userRepo.GetByEmail(request.Email)
 	if err != nil {
-		logger.Error("User not found or database error", err)
+		if err == repository.ErrUserNotFound {
+			logger.Error("User not found")
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+			return
+		}
+		logger.Error("Database error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	if user == nil {
+		logger.Error("User not found")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
