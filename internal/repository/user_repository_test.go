@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/indietesthub/ith-access/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUserRepository_GetByEmail(t *testing.T) {
@@ -72,4 +73,45 @@ func TestUserRepository_GetByID(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCreateUser(t *testing.T) {
+	repo := NewMockUserRepository()
+
+	// Test creating a new user
+	newUser := &model.User{
+		Email:    "new@test.com",
+		Password: "newPassword123",
+		Name:     "New User",
+	}
+
+	err := repo.Create(newUser)
+	assert.NoError(t, err)
+	assert.NotZero(t, newUser.ID)
+	assert.NotEmpty(t, newUser.Password)
+	assert.NotEqual(t, "newPassword123", newUser.Password) // Password should be hashed
+	assert.NotZero(t, newUser.CreatedAt)
+	assert.NotZero(t, newUser.UpdatedAt)
+
+	// Test creating user with existing email
+	err = repo.Create(newUser)
+	assert.Error(t, err)
+	assert.Equal(t, ErrUserExists, err)
+}
+
+func TestGetUserByEmail(t *testing.T) {
+	repo := NewMockUserRepository()
+
+	// Test getting existing user
+	user, err := repo.GetByEmail("test@test.com")
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+	assert.Equal(t, "test@test.com", user.Email)
+	assert.Equal(t, "Test User", user.Name)
+
+	// Test getting non-existing user
+	user, err = repo.GetByEmail("nonexistent@test.com")
+	assert.Error(t, err)
+	assert.Equal(t, ErrUserNotFound, err)
+	assert.Nil(t, user)
 }

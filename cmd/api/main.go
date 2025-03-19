@@ -33,8 +33,9 @@ func main() {
 	// Add routes
 	userRepo := repository.NewUserRepository()
 	loginHandler := handler.NewLoginHandler(userRepo)
+	signupHandler := handler.NewSignupHandler(userRepo)
 	router.POST("/login", loginHandler.Handle)
-
+	router.POST("/signup", signupHandler.Handle)
 	// Start server
 	port := os.Getenv("PORT")
 	if port == "" {

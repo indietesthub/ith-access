@@ -3,7 +3,9 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
+	"github.com/indietesthub/ith-access/internal/auth"
 	"github.com/indietesthub/ith-access/internal/database"
 	"github.com/indietesthub/ith-access/internal/model"
 )
@@ -11,11 +13,13 @@ import (
 var (
 	ErrUserNotFound = errors.New("user not found")
 	ErrDatabase     = errors.New("database error")
+	ErrUserExists   = errors.New("user already exists")
 )
 
 type UserRepositoryInterface interface {
 	GetByEmail(email string) (*model.User, error)
 	GetByID(id int64) (*model.User, error)
+	Create(user *model.User) error
 }
 
 type UserRepository struct {
@@ -28,26 +32,74 @@ func NewUserRepository() *UserRepository {
 	}
 }
 
-func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
-	var user model.User
-	err := r.db.QueryRow("SELECT id, email, password, name FROM users WHERE email = $1", email).Scan(&user.ID, &user.Email, &user.Password, &user.Name)
+const (
+	selectUserFields = `
+		SELECT id, email, password, name, created_at, updated_at 
+		FROM users 
+		WHERE %s = $1
+	`
+	insertUserFields = `
+		INSERT INTO users (email, password, name, created_at, updated_at)
+		VALUES ($1, $2, $3, NOW(), NOW())
+		RETURNING id
+	`
+)
+
+func (r *UserRepository) Create(user *model.User) error {
+	// Hash the password before storing
+	hashedPassword, err := auth.HashPassword(user.Password)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ErrUserNotFound
-		}
-		return nil, ErrDatabase
+		return fmt.Errorf("%w: %v", ErrDatabase, err)
 	}
-	return &user, nil
+
+	// Check if user already exists
+	existingUser, err := r.GetByEmail(user.Email)
+	if err == nil && existingUser != nil {
+		return ErrUserExists
+	}
+
+	// Insert the new user
+	err = r.db.QueryRow(
+		insertUserFields,
+		user.Email,
+		hashedPassword,
+		user.Name,
+	).Scan(&user.ID)
+
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrDatabase, err)
+	}
+
+	return nil
+}
+
+func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
+	query := fmt.Sprintf(selectUserFields, "email")
+	return r.getUser(query, email)
 }
 
 func (r *UserRepository) GetByID(id int64) (*model.User, error) {
-	var user model.User
-	err := r.db.QueryRow("SELECT id, email, password, name FROM users WHERE id = $1", id).Scan(&user.ID, &user.Email, &user.Password, &user.Name)
+	query := fmt.Sprintf(selectUserFields, "id")
+	return r.getUser(query, id)
+}
+
+func (r *UserRepository) getUser(query string, args ...interface{}) (*model.User, error) {
+	user := &model.User{}
+	err := r.db.QueryRow(query, args...).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Password,
+		&user.Name,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrUserNotFound
 		}
-		return nil, ErrDatabase
+		return nil, fmt.Errorf("%w: %v", ErrDatabase, err)
 	}
-	return &user, nil
+
+	return user, nil
 }

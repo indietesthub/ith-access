@@ -45,14 +45,12 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	if user == nil {
-		logger.Error("User not found")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
+	logger.Info("User found, verifying password")
+	logger.Info("Stored hash:", user.Password)
+	logger.Info("Provided password:", request.Password)
 
-	// TODO: Add proper password hashing and comparison
-	if user.Password != request.Password {
+	// Verify password using bcrypt
+	if !auth.CheckPassword(request.Password, user.Password) {
 		logger.Error("Invalid password")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
