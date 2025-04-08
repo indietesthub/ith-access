@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/indietesthub/ith-access/internal/model"
+	"github.com/indietesthub/ith-access/internal/domain"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +20,7 @@ func TestUserRepository_GetByEmail(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *model.User
+		want    *domain.User
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -53,7 +53,7 @@ func TestUserRepository_GetByID(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *model.User
+		want    *domain.User
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -79,7 +79,7 @@ func TestCreateUser(t *testing.T) {
 	repo := NewMockUserRepository()
 
 	// Test creating a new user
-	newUser := &model.User{
+	newUser := &domain.User{
 		Email:    "new@test.com",
 		Password: "newPassword123",
 		Name:     "New User",

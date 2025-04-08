@@ -9,6 +9,7 @@ import (
 	"github.com/indietesthub/ith-access/internal/handler"
 	"github.com/indietesthub/ith-access/internal/middleware"
 	"github.com/indietesthub/ith-access/internal/repository"
+	"github.com/indietesthub/ith-access/internal/usecases"
 	"github.com/indietesthub/ith-access/pkg/logger"
 )
 
@@ -45,7 +46,8 @@ func main() {
 
 	// Add routes with API key protection
 	userRepo := repository.NewUserRepository()
-	loginHandler := handler.NewLoginHandler(userRepo)
+	loginService := usecases.NewLoginService(userRepo)
+	loginHandler := handler.NewLoginHandler(loginService)
 	signupHandler := handler.NewSignupHandler(userRepo)
 
 	// Public routes with API key protection

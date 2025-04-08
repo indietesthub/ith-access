@@ -12,11 +12,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// JWTSecretKey is the secret key used for JWT signing and verification
-// It can be overridden in tests
-var JWTSecretKey = GetJWTSecretKey
+type Claims struct {
+	UserID string `json:"user_id"`
+	jwt.RegisteredClaims
+}
 
-var GetJWTSecretKey = func() []byte {
+// JWTSecretKey retrieves the secret key for JWT signing and validation from AWS Secrets Manager
+var JWTSecretKey = func() []byte {
 	secretName := "prod/indietesthub/jwt-secret-key"
 	region := "us-east-1"
 
@@ -29,20 +31,15 @@ var GetJWTSecretKey = func() []byte {
 
 	input := &secretsmanager.GetSecretValueInput{
 		SecretId:     aws.String(secretName),
-		VersionStage: aws.String("AWSCURRENT"), // VersionStage defaults to AWSCURRENT if unspecified
+		VersionStage: aws.String("AWSCURRENT"),
 	}
 
 	result, err := svc.GetSecretValue(context.TODO(), input)
 	if err != nil {
-		log.Fatalf("Failed to get secret: %v", err)
+		log.Fatalf("Failed to get secret from AWS Secrets Manager: %v", err)
 	}
 
 	return []byte(*result.SecretString)
-}
-
-type Claims struct {
-	UserID string `json:"user_id"`
-	jwt.RegisteredClaims
 }
 
 func GenerateToken(userID string) (string, error) {

@@ -25,14 +25,15 @@ func InitDB() error {
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
+	sslMode := os.Getenv("PGSSLMODE")
 
 	// Validate that all required environment variables are set
 	if dbHost == "" || dbPort == "" || dbUser == "" || dbPassword == "" || dbName == "" {
 		return fmt.Errorf("missing required database environment variables")
 	}
 
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		dbHost, dbPort, dbUser, dbPassword, dbName)
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		dbHost, dbPort, dbUser, dbPassword, dbName, sslMode)
 
 	logger.Info("Connecting to database")
 	DB, err = sql.Open("postgres", dsn)
@@ -42,6 +43,7 @@ func InitDB() error {
 
 	// Test the connection
 	logger.Info("Testing connection to database")
+	logger.Info("Trying to ping: ", dbHost, dbPort, dbUser, dbPassword, dbName)
 	err = DB.Ping()
 	if err != nil {
 		return fmt.Errorf("error connecting to the database: %v", err)

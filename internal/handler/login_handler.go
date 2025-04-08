@@ -4,28 +4,22 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/indietesthub/ith-access/internal/auth"
-	"github.com/indietesthub/ith-access/internal/repository"
+	"github.com/indietesthub/ith-access/internal/domain"
 	"github.com/indietesthub/ith-access/pkg/logger"
 )
 
-type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-
 type LoginHandler struct {
-	userRepo repository.UserRepositoryInterface
+	usecase domain.LoginService
 }
 
-func NewLoginHandler(userRepo repository.UserRepositoryInterface) *LoginHandler {
+func NewLoginHandler(usecase domain.LoginService) *LoginHandler {
 	return &LoginHandler{
-		userRepo: userRepo,
+		usecase: usecase,
 	}
 }
 
 func (h *LoginHandler) Handle(c *gin.Context) {
-	var request LoginRequest
+	var request domain.LoginRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		logger.Error("Invalid request body", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -33,30 +27,15 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 	}
 
 	// Get user from database
-	user, err := h.userRepo.GetByEmail(request.Email)
+	token, err := h.usecase.Login(&request)
 	if err != nil {
-		if err == repository.ErrUserNotFound {
-			logger.Error("User not found")
+		if err.Error() == "invalid credentials" {
+			logger.Error("Invalid credentials", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 			return
 		}
-		logger.Error("Database error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-		return
-	}
-
-	// Verify password using bcrypt
-	if !auth.CheckPassword(request.Password, user.Password) {
-		logger.Error("Invalid password")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	// Generate JWT token
-	token, err := auth.GenerateToken(user.Email)
-	if err != nil {
-		logger.Error("Failed to generate token", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		logger.Error("Login failed", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login"})
 		return
 	}
 

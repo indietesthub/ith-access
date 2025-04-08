@@ -7,7 +7,7 @@ import (
 
 	"github.com/indietesthub/ith-access/internal/auth"
 	"github.com/indietesthub/ith-access/internal/database"
-	"github.com/indietesthub/ith-access/internal/model"
+	"github.com/indietesthub/ith-access/internal/domain"
 )
 
 var (
@@ -17,9 +17,9 @@ var (
 )
 
 type UserRepositoryInterface interface {
-	GetByEmail(email string) (*model.User, error)
-	GetByID(id int64) (*model.User, error)
-	Create(user *model.User) error
+	GetByEmail(email string) (*domain.User, error)
+	GetByID(id int64) (*domain.User, error)
+	Create(user *domain.User) error
 }
 
 type UserRepository struct {
@@ -45,7 +45,7 @@ const (
 	`
 )
 
-func (r *UserRepository) Create(user *model.User) error {
+func (r *UserRepository) Create(user *domain.User) error {
 	// Hash the password before storing
 	hashedPassword, err := auth.HashPassword(user.Password)
 	if err != nil {
@@ -73,18 +73,18 @@ func (r *UserRepository) Create(user *model.User) error {
 	return nil
 }
 
-func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
+func (r *UserRepository) GetByEmail(email string) (*domain.User, error) {
 	query := fmt.Sprintf(selectUserFields, "email")
 	return r.getUser(query, email)
 }
 
-func (r *UserRepository) GetByID(id int64) (*model.User, error) {
+func (r *UserRepository) GetByID(id int64) (*domain.User, error) {
 	query := fmt.Sprintf(selectUserFields, "id")
 	return r.getUser(query, id)
 }
 
-func (r *UserRepository) getUser(query string, args ...interface{}) (*model.User, error) {
-	user := &model.User{}
+func (r *UserRepository) getUser(query string, args ...interface{}) (*domain.User, error) {
+	user := &domain.User{}
 	err := r.db.QueryRow(query, args...).Scan(
 		&user.ID,
 		&user.Email,

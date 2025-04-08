@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/indietesthub/ith-access/internal/model"
+	"github.com/indietesthub/ith-access/internal/domain"
 	"github.com/indietesthub/ith-access/internal/repository"
 	"github.com/indietesthub/ith-access/pkg/logger"
 )
@@ -42,7 +42,7 @@ func (h *SignupHandler) Handle(c *gin.Context) {
 	}
 
 	// Create new user
-	newUser := &model.User{
+	newUser := &domain.User{
 		Email:    request.Email,
 		Password: request.Password,
 		Name:     request.Name,

@@ -3,39 +3,44 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/indietesthub/ith-access/internal/auth"
-	"github.com/indietesthub/ith-access/internal/repository"
+	"github.com/indietesthub/ith-access/internal/domain"
 	"github.com/stretchr/testify/assert"
 )
 
-func setupRouter() *gin.Engine {
+type MockLoginService struct {
+	Token string
+	Error error
+}
+
+var mockService = &MockLoginService{}
+
+func (s *MockLoginService) Login(request *domain.LoginRequest) (string, error) {
+	if request.Email != "test@test.com" && request.Password != "password" {
+		return "", errors.New("invalid credentials")
+	}
+	return "mocked-jwt-token", nil
+}
+
+func setupRouter(service domain.LoginService) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	// Create mock repository
-	mockRepo := repository.NewMockUserRepository()
-
-	// Create login handler with mock repository
-	loginHandler := NewLoginHandler(mockRepo)
-
-	// Set a fixed JWT secret key for testing
-	auth.JWTSecretKey = func() []byte {
-		return []byte("test-secret-key")
-	}
-
+	loginHandler := NewLoginHandler(service)
 	r.POST("/login", loginHandler.Handle)
 	return r
 }
 
 func TestLoginSuccess(t *testing.T) {
-	router := setupRouter()
 
-	loginRequest := LoginRequest{
+	router := setupRouter(mockService)
+
+	loginRequest := domain.LoginRequest{
 		Email:    "test@test.com",
 		Password: "password",
 	}
@@ -56,9 +61,9 @@ func TestLoginSuccess(t *testing.T) {
 }
 
 func TestLoginInvalidCredentials(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(mockService)
 
-	loginRequest := LoginRequest{
+	loginRequest := domain.LoginRequest{
 		Email:    "wrong@test.com",
 		Password: "wrongpassword",
 	}
@@ -78,7 +83,7 @@ func TestLoginInvalidCredentials(t *testing.T) {
 }
 
 func TestLoginInvalidRequest(t *testing.T) {
-	router := setupRouter()
+	router := setupRouter(mockService)
 
 	// Missing required fields
 	loginRequest := map[string]string{

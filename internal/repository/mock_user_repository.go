@@ -4,11 +4,11 @@ import (
 	"time"
 
 	"github.com/indietesthub/ith-access/internal/auth"
-	"github.com/indietesthub/ith-access/internal/model"
+	"github.com/indietesthub/ith-access/internal/domain"
 )
 
 type MockUserRepository struct {
-	users map[string]*model.User
+	users map[string]*domain.User
 }
 
 func NewMockUserRepository() *MockUserRepository {
@@ -18,7 +18,7 @@ func NewMockUserRepository() *MockUserRepository {
 	hashedPassword, _ := auth.HashPassword("password")
 
 	return &MockUserRepository{
-		users: map[string]*model.User{
+		users: map[string]*domain.User{
 			"test@test.com": {
 				ID:        1,
 				Email:     "test@test.com",
@@ -31,14 +31,14 @@ func NewMockUserRepository() *MockUserRepository {
 	}
 }
 
-func (m *MockUserRepository) GetByEmail(email string) (*model.User, error) {
+func (m *MockUserRepository) GetByEmail(email string) (*domain.User, error) {
 	if user, exists := m.users[email]; exists {
 		return user, nil
 	}
 	return nil, ErrUserNotFound
 }
 
-func (m *MockUserRepository) GetByID(id int64) (*model.User, error) {
+func (m *MockUserRepository) GetByID(id int64) (*domain.User, error) {
 	for _, user := range m.users {
 		if user.ID == id {
 			return user, nil
@@ -47,7 +47,7 @@ func (m *MockUserRepository) GetByID(id int64) (*model.User, error) {
 	return nil, ErrUserNotFound
 }
 
-func (m *MockUserRepository) Create(user *model.User) error {
+func (m *MockUserRepository) Create(user *domain.User) error {
 	// Check if user already exists
 	if _, exists := m.users[user.Email]; exists {
 		return ErrUserExists

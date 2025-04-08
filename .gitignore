@@ -1,3 +1,8 @@
 terraform/
 terraform.tfstate
 .env
+.env.dev
+docker-compose.yml
+logs/
+ssl/
+generate-ssl.sh
