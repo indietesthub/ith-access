@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ith-access
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ith-access
+  template:
+    metadata:
+      labels:
+        app: ith-access
+    spec:
+      containers:
+        - name: ith-access
+          image: ith-access:latest
+          ports:
+            - containerPort: 8080
